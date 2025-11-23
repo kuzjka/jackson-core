@@ -225,6 +225,13 @@ public final class Base64Variant
         int[] srcV = base._asciiToBase64;
         System.arraycopy(srcV, 0, this._asciiToBase64, 0, srcV.length);
 
+        if (base._writePadding) {
+            this._asciiToBase64[base._paddingChar] = BASE64_VALUE_INVALID;
+        }
+        if (writePadding) {
+            this._asciiToBase64[paddingChar] = BASE64_VALUE_PADDING;
+        }
+
         _writePadding = writePadding;
         _paddingChar = paddingChar;
         _maxLineLength = maxLineLength;

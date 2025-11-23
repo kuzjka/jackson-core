@@ -3,6 +3,7 @@ package tools.jackson.core.unittest;
 import org.junit.jupiter.api.Test;
 
 import tools.jackson.core.Base64Variant;
+import tools.jackson.core.Base64Variants;
 import tools.jackson.core.util.BufferRecycler;
 import tools.jackson.core.util.ByteArrayBuilder;
 
@@ -103,5 +104,34 @@ public class Base64VariantTest extends JacksonCoreTestBase
 
         assertArrayEquals(new byte[]{(byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0}, byteArray);
         assertEquals("\"AAAA\\nAAAA\\nAAAA\\n\"", encoded);
+    }
+
+    @Test
+    public void testDecodeCustomPaddingDerivedVariant() {
+        /*
+         * This test uses custom Base64Variant derived from padding-less 'MODIFIED_FOR_URL' variant.
+         * Since a custom padding char is set in the constructor - decoding should accept this custom padding.
+         */
+        Base64Variant variant = new Base64Variant(Base64Variants.MODIFIED_FOR_URL, "CUSTOM-PADDING",
+                true, '!', Integer.MAX_VALUE).withPaddingRequired();
+        byte[] data = new byte[1]; // 1 byte of data should produce 2 padding chars
+
+        String encoded = variant.encode(data);
+        assertTrue(encoded.endsWith("!!"));
+
+        byte[] decoded = variant.decode(encoded);
+        assertArrayEquals(data, decoded);
+    }
+
+    @Test
+    public void testDecodeDerivedVariantIllegalPaddingCharThrows() {
+        /*
+         * This test uses custom Base64Variant derived from 'MIME_NO_LINEFEEDS'.
+         * Since a custom padding char is set in the constructor - decoding should not allow standard '=' padding.
+         */
+        Base64Variant variant = new Base64Variant(Base64Variants.MIME_NO_LINEFEEDS, "CUSTOM-PADDING",
+                true, '!', Integer.MAX_VALUE);
+
+        assertThrows(IllegalArgumentException.class, () -> variant.decode("AA=="));
     }
 }
